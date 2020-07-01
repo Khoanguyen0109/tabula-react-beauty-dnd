@@ -9897,19 +9897,11 @@
       return false;
     }
 
-    var isScrollable = false;
-    var hasScrollbars = false;
-    isScrollable = el.scrollHeight > el.offsetHeight;
-
-    if (isScrollable) {
-      hasScrollbars = el.offsetWidth > el.scrollWidth;
-    }
-
-    if (isScrollable && !hasScrollbars) {
-      return true;
-    }
-
-    return false;
+    var yScrollable = false;
+    var xScrollable = false;
+    yScrollable = el.scrollHeight > el.offsetHeight;
+    xScrollable = el.offsetWidth > el.scrollWidth;
+    return xScrollable || yScrollable;
   };
 
   var isBodyScrollable = function isBodyScrollable() {
@@ -9949,7 +9941,7 @@
       return null;
     }
 
-    if (!isElementScrollableWithoutScrollbar(el)) {
+    if (!isElementScrollable(el) || !isElementScrollableWithoutScrollbar(el)) {
       return getClosestScrollable(el.parentElement);
     }
 

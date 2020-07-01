@@ -7058,7 +7058,7 @@ var getClosestScrollable = function getClosestScrollable(el) {
     return null;
   }
 
-  if (!isElementScrollable(el) || !isElementScrollableWithoutScrollbar(el)) {
+  if (!isElementScrollable(el) && !isElementScrollableWithoutScrollbar(el)) {
     return getClosestScrollable(el.parentElement);
   }
 

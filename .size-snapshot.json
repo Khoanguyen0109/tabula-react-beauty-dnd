@@ -12,7 +12,7 @@
   "dist/react-beautiful-dnd.esm.js": {
     "bundled": 241274,
     "minified": 125536,
-    "gzipped": 32693,
+    "gzipped": 32692,
     "treeshaked": {
       "rollup": {
         "code": 21222,

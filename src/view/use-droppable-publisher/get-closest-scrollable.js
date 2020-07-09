@@ -94,7 +94,7 @@ const getClosestScrollable = (el: ?Element): ?Element => {
   }
 
   // if (!isElementScrollable(el)) {
-  if (!isElementScrollable(el) && !isElementScrollableWithoutScrollbar(el)) {
+  if (!isElementScrollable(el)) {
     // keep recursing
     return getClosestScrollable(el.parentElement);
   }

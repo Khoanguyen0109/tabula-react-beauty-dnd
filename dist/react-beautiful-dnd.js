@@ -7,6 +7,46 @@
   var React__default = 'default' in React ? React['default'] : React;
   var ReactDOM__default = 'default' in ReactDOM ? ReactDOM['default'] : ReactDOM;
 
+  function areInputsEqual(newInputs, lastInputs) {
+    if (newInputs.length !== lastInputs.length) {
+      return false;
+    }
+
+    for (var i = 0; i < newInputs.length; i++) {
+      if (newInputs[i] !== lastInputs[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  function useMemoOne(getResult, inputs) {
+    var initial = React.useState(function () {
+      return {
+        inputs: inputs,
+        result: getResult()
+      };
+    })[0];
+    var committed = React.useRef(initial);
+    var isInputMatch = Boolean(inputs && committed.current.inputs && areInputsEqual(inputs, committed.current.inputs));
+    var cache = isInputMatch ? committed.current : {
+      inputs: inputs,
+      result: getResult()
+    };
+    React.useEffect(function () {
+      committed.current = cache;
+    }, [cache]);
+    return cache.result;
+  }
+  function useCallbackOne(callback, inputs) {
+    return useMemoOne(function () {
+      return callback;
+    }, inputs);
+  }
+  var useMemo = useMemoOne;
+  var useCallback = useCallbackOne;
+
   function _inheritsLoose(subClass, superClass) {
     subClass.prototype = Object.create(superClass.prototype);
     subClass.prototype.constructor = subClass;
@@ -2888,46 +2928,6 @@
   createConnect();
 
   setBatch(ReactDOM.unstable_batchedUpdates);
-
-  function areInputsEqual(newInputs, lastInputs) {
-    if (newInputs.length !== lastInputs.length) {
-      return false;
-    }
-
-    for (var i = 0; i < newInputs.length; i++) {
-      if (newInputs[i] !== lastInputs[i]) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  function useMemoOne(getResult, inputs) {
-    var initial = React.useState(function () {
-      return {
-        inputs: inputs,
-        result: getResult()
-      };
-    })[0];
-    var committed = React.useRef(initial);
-    var isInputMatch = Boolean(inputs && committed.current.inputs && areInputsEqual(inputs, committed.current.inputs));
-    var cache = isInputMatch ? committed.current : {
-      inputs: inputs,
-      result: getResult()
-    };
-    React.useEffect(function () {
-      committed.current = cache;
-    }, [cache]);
-    return cache.result;
-  }
-  function useCallbackOne(callback, inputs) {
-    return useMemoOne(function () {
-      return callback;
-    }, inputs);
-  }
-  var useMemo = useMemoOne;
-  var useCallback = useCallbackOne;
 
   var origin = {
     x: 0,
@@ -6720,6 +6720,10 @@
     return function (store) {
       return function (next) {
         return function (action) {
+          if (!autoScroller) {
+            return;
+          }
+
           if (shouldStop(action)) {
             autoScroller.stop();
             next(action);
@@ -7715,7 +7719,8 @@
   var createAutoScroller = (function (_ref) {
     var scrollDroppable = _ref.scrollDroppable,
         scrollWindow = _ref.scrollWindow,
-        move = _ref.move;
+        move = _ref.move,
+        enabled = _ref.enabled;
     var fluidScroller = createFluidScroller({
       scrollWindow: scrollWindow,
       scrollDroppable: scrollDroppable
@@ -7727,7 +7732,7 @@
     });
 
     var scroll = function scroll(state) {
-      if (state.phase !== 'DRAGGING') {
+      if (!enabled || state.phase !== 'DRAGGING') {
         return;
       }
 
@@ -8278,9 +8283,6 @@
   var defaults = {
     separator: '::'
   };
-  function reset() {
-    count = 0;
-  }
   function useUniqueId(prefix, options) {
     if (options === void 0) {
       options = defaults;
@@ -9721,7 +9723,8 @@
         setCallbacks = props.setCallbacks,
         sensors = props.sensors,
         nonce = props.nonce,
-        dragHandleUsageInstructions = props.dragHandleUsageInstructions;
+        dragHandleUsageInstructions = props.dragHandleUsageInstructions,
+        autoScroll = props.autoScroll;
     var lazyStoreRef = React.useRef(null);
     useStartupValidation();
     var lastPropsRef = usePrevious(props);
@@ -9756,8 +9759,10 @@
         scrollDroppable: dimensionMarshal.scrollDroppable
       }, bindActionCreators({
         move: move
-      }, lazyDispatch)));
-    }, [dimensionMarshal.scrollDroppable, lazyDispatch]);
+      }, lazyDispatch), {
+        enabled: autoScroll !== false
+      }));
+    }, [autoScroll, dimensionMarshal.scrollDroppable, lazyDispatch]);
     var focusMarshal = useFocusMarshal(contextId);
     var store = useMemo(function () {
       return createStore$1({
@@ -9831,36 +9836,29 @@
     }, props.children));
   }
 
-  var count$1 = 0;
-  function reset$1() {
-    count$1 = 0;
-  }
-  function useInstanceCount() {
-    return useMemo(function () {
-      return "" + count$1++;
-    }, []);
-  }
-
+  var instanceCount = 0;
   function resetServerContext() {
-    reset$1();
-    reset();
+    instanceCount = 0;
   }
   function DragDropContext(props) {
-    var contextId = useInstanceCount();
-    var dragHandleUsageInstructions = props.dragHandleUsageInstructions || preset.dragHandleUsageInstructions;
+    var contextId = useMemo(function () {
+      return "" + instanceCount++;
+    }, []);
+    var liftInstruction = props.liftInstruction || preset.liftInstruction;
     return React__default.createElement(ErrorBoundary, null, function (setCallbacks) {
       return React__default.createElement(App, {
         nonce: props.nonce,
         contextId: contextId,
         setCallbacks: setCallbacks,
-        dragHandleUsageInstructions: dragHandleUsageInstructions,
+        liftInstruction: liftInstruction,
         enableDefaultSensors: props.enableDefaultSensors,
         sensors: props.sensors,
         onBeforeCapture: props.onBeforeCapture,
         onBeforeDragStart: props.onBeforeDragStart,
         onDragStart: props.onDragStart,
         onDragUpdate: props.onDragUpdate,
-        onDragEnd: props.onDragEnd
+        onDragEnd: props.onDragEnd,
+        autoScroll: props.autoScroll
       }, props.children);
     });
   }
@@ -9890,18 +9888,6 @@
       overflowY: style.overflowY
     };
     return isEither(overflow, isScroll) || isEither(overflow, isAuto);
-  };
-
-  var isElementScrollableWithoutScrollbar = function isElementScrollableWithoutScrollbar(el) {
-    if (el === null) {
-      return false;
-    }
-
-    var yScrollable = false;
-    var xScrollable = false;
-    yScrollable = el.scrollHeight > el.offsetHeight;
-    xScrollable = el.offsetWidth > el.scrollWidth;
-    return xScrollable || yScrollable;
   };
 
   var isBodyScrollable = function isBodyScrollable() {
@@ -9941,7 +9927,7 @@
       return null;
     }
 
-    if (!isElementScrollable(el) && !isElementScrollableWithoutScrollbar(el)) {
+    if (!isElementScrollable(el)) {
       return getClosestScrollable(el.parentElement);
     }
 

@@ -6,11 +6,11 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var React = require('react');
 var React__default = _interopDefault(React);
+var useMemoOne = require('use-memo-one');
 var _inheritsLoose = _interopDefault(require('@babel/runtime/helpers/inheritsLoose'));
 var _extends = _interopDefault(require('@babel/runtime/helpers/extends'));
 var redux = require('redux');
 var reactRedux = require('react-redux');
-var useMemoOne = require('use-memo-one');
 var cssBoxModel = require('css-box-model');
 var memoizeOne = _interopDefault(require('memoize-one'));
 var rafSchd = _interopDefault(require('raf-schd'));
@@ -3835,6 +3835,10 @@ var autoScroll = (function (autoScroller) {
   return function (store) {
     return function (next) {
       return function (action) {
+        if (!autoScroller) {
+          return;
+        }
+
         if (shouldStop(action)) {
           autoScroller.stop();
           next(action);
@@ -4836,7 +4840,8 @@ var createJumpScroller = (function (_ref) {
 var createAutoScroller = (function (_ref) {
   var scrollDroppable = _ref.scrollDroppable,
       scrollWindow = _ref.scrollWindow,
-      move = _ref.move;
+      move = _ref.move,
+      enabled = _ref.enabled;
   var fluidScroller = createFluidScroller({
     scrollWindow: scrollWindow,
     scrollDroppable: scrollDroppable
@@ -4848,7 +4853,7 @@ var createAutoScroller = (function (_ref) {
   });
 
   var scroll = function scroll(state) {
-    if (state.phase !== 'DRAGGING') {
+    if (!enabled || state.phase !== 'DRAGGING') {
       return;
     }
 
@@ -5399,9 +5404,6 @@ var count = 0;
 var defaults = {
   separator: '::'
 };
-function reset() {
-  count = 0;
-}
 function useUniqueId(prefix, options) {
   if (options === void 0) {
     options = defaults;
@@ -6842,7 +6844,8 @@ function App(props) {
       setCallbacks = props.setCallbacks,
       sensors = props.sensors,
       nonce = props.nonce,
-      dragHandleUsageInstructions = props.dragHandleUsageInstructions;
+      dragHandleUsageInstructions = props.dragHandleUsageInstructions,
+      autoScroll = props.autoScroll;
   var lazyStoreRef = React.useRef(null);
   useStartupValidation();
   var lastPropsRef = usePrevious(props);
@@ -6877,8 +6880,10 @@ function App(props) {
       scrollDroppable: dimensionMarshal.scrollDroppable
     }, redux.bindActionCreators({
       move: move
-    }, lazyDispatch)));
-  }, [dimensionMarshal.scrollDroppable, lazyDispatch]);
+    }, lazyDispatch), {
+      enabled: autoScroll !== false
+    }));
+  }, [autoScroll, dimensionMarshal.scrollDroppable, lazyDispatch]);
   var focusMarshal = useFocusMarshal(contextId);
   var store = useMemoOne.useMemo(function () {
     return createStore({
@@ -6952,36 +6957,29 @@ function App(props) {
   }, props.children));
 }
 
-var count$1 = 0;
-function reset$1() {
-  count$1 = 0;
-}
-function useInstanceCount() {
-  return useMemoOne.useMemo(function () {
-    return "" + count$1++;
-  }, []);
-}
-
+var instanceCount = 0;
 function resetServerContext() {
-  reset$1();
-  reset();
+  instanceCount = 0;
 }
 function DragDropContext(props) {
-  var contextId = useInstanceCount();
-  var dragHandleUsageInstructions = props.dragHandleUsageInstructions || preset.dragHandleUsageInstructions;
+  var contextId = useMemoOne.useMemo(function () {
+    return "" + instanceCount++;
+  }, []);
+  var liftInstruction = props.liftInstruction || preset.liftInstruction;
   return React__default.createElement(ErrorBoundary, null, function (setCallbacks) {
     return React__default.createElement(App, {
       nonce: props.nonce,
       contextId: contextId,
       setCallbacks: setCallbacks,
-      dragHandleUsageInstructions: dragHandleUsageInstructions,
+      liftInstruction: liftInstruction,
       enableDefaultSensors: props.enableDefaultSensors,
       sensors: props.sensors,
       onBeforeCapture: props.onBeforeCapture,
       onBeforeDragStart: props.onBeforeDragStart,
       onDragStart: props.onDragStart,
       onDragUpdate: props.onDragUpdate,
-      onDragEnd: props.onDragEnd
+      onDragEnd: props.onDragEnd,
+      autoScroll: props.autoScroll
     }, props.children);
   });
 }
@@ -7011,18 +7009,6 @@ var isElementScrollable = function isElementScrollable(el) {
     overflowY: style.overflowY
   };
   return isEither(overflow, isScroll) || isEither(overflow, isAuto);
-};
-
-var isElementScrollableWithoutScrollbar = function isElementScrollableWithoutScrollbar(el) {
-  if (el === null) {
-    return false;
-  }
-
-  var yScrollable = false;
-  var xScrollable = false;
-  yScrollable = el.scrollHeight > el.offsetHeight;
-  xScrollable = el.offsetWidth > el.scrollWidth;
-  return xScrollable || yScrollable;
 };
 
 var isBodyScrollable = function isBodyScrollable() {
@@ -7065,7 +7051,7 @@ var getClosestScrollable = function getClosestScrollable(el) {
     return null;
   }
 
-  if (!isElementScrollable(el) && !isElementScrollableWithoutScrollbar(el)) {
+  if (!isElementScrollable(el)) {
     return getClosestScrollable(el.parentElement);
   }
 

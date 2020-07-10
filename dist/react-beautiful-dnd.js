@@ -9815,9 +9815,10 @@
         canLift: getCanLift,
         isMovementAllowed: getIsMovementAllowed,
         dragHandleUsageInstructionsId: dragHandleUsageInstructionsId,
-        registry: registry
+        registry: registry,
+        autoScroll: autoScroll
       };
-    }, [contextId, dimensionMarshal, dragHandleUsageInstructionsId, focusMarshal, getCanLift, getIsMovementAllowed, registry]);
+    }, [contextId, dimensionMarshal, dragHandleUsageInstructionsId, focusMarshal, getCanLift, getIsMovementAllowed, registry, autoScroll]);
     useSensorMarshal({
       contextId: contextId,
       store: store,
@@ -10140,7 +10141,8 @@
     var appContext = useRequiredContext(AppContext);
     var uniqueId = useUniqueId('droppable');
     var registry = appContext.registry,
-        marshal = appContext.marshal;
+        marshal = appContext.marshal,
+        autoScroll = appContext.autoScroll;
     var previousRef = usePrevious(args);
     var descriptor = useMemo(function () {
       return {
@@ -10214,7 +10216,7 @@
       });
       var scrollable = env.closestScrollable;
 
-      if (scrollable) {
+      if (scrollable && autoScroll) {
         scrollable.setAttribute(scrollContainer.contextId, appContext.contextId);
         scrollable.addEventListener('scroll', onClosestScroll, getListenerOptions(dragging.scrollOptions));
 
@@ -10250,8 +10252,11 @@
       !dragging ?  invariant(false, 'Cannot scroll when there is no drag')  : void 0;
       var closest = getClosestScrollableFromDrag(dragging);
       !closest ?  invariant(false, 'Cannot scroll a droppable with no closest scrollable')  : void 0;
-      closest.scrollTop += change.y;
-      closest.scrollLeft += change.x;
+
+      if (autoScroll) {
+        closest.scrollTop += change.y;
+        closest.scrollLeft += change.x;
+      }
     }, []);
     var callbacks = useMemo(function () {
       return {

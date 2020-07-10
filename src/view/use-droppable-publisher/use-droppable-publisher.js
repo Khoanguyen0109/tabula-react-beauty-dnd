@@ -58,7 +58,7 @@ export default function useDroppablePublisher(args: Props) {
   const whileDraggingRef = useRef<?WhileDragging>(null);
   const appContext: AppContextValue = useRequiredContext(AppContext);
   const uniqueId: Id = useUniqueId('droppable');
-  const { registry, marshal } = appContext;
+  const { registry, marshal, autoScroll } = appContext;
   const previousRef = usePreviousRef(args);
 
   const descriptor = useMemo<DroppableDescriptor>(
@@ -152,7 +152,7 @@ export default function useDroppablePublisher(args: Props) {
 
       const scrollable: ?Element = env.closestScrollable;
 
-      if (scrollable) {
+      if (scrollable && autoScroll) {
         scrollable.setAttribute(
           dataAttr.scrollContainer.contextId,
           appContext.contextId,
@@ -216,8 +216,10 @@ export default function useDroppablePublisher(args: Props) {
     invariant(closest, 'Cannot scroll a droppable with no closest scrollable');
 
     // act
-    closest.scrollTop += change.y;
-    closest.scrollLeft += change.x;
+    if (autoScroll) {
+      closest.scrollTop += change.y;
+      closest.scrollLeft += change.x;
+    }
   }, []);
 
   const callbacks: DroppableCallbacks = useMemo(() => {

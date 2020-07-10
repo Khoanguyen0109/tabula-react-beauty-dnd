@@ -229,6 +229,7 @@ export default function App(props: Props) {
       isMovementAllowed: getIsMovementAllowed,
       dragHandleUsageInstructionsId,
       registry,
+      autoScroll,
     }),
     [
       contextId,
@@ -238,6 +239,7 @@ export default function App(props: Props) {
       getCanLift,
       getIsMovementAllowed,
       registry,
+      autoScroll,
     ],
   );
 

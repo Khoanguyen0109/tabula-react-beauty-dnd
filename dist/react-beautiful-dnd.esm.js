@@ -6929,9 +6929,10 @@ function App(props) {
       canLift: getCanLift,
       isMovementAllowed: getIsMovementAllowed,
       dragHandleUsageInstructionsId: dragHandleUsageInstructionsId,
-      registry: registry
+      registry: registry,
+      autoScroll: autoScroll
     };
-  }, [contextId, dimensionMarshal, dragHandleUsageInstructionsId, focusMarshal, getCanLift, getIsMovementAllowed, registry]);
+  }, [contextId, dimensionMarshal, dragHandleUsageInstructionsId, focusMarshal, getCanLift, getIsMovementAllowed, registry, autoScroll]);
   useSensorMarshal({
     contextId: contextId,
     store: store,
@@ -7257,7 +7258,8 @@ function useDroppablePublisher(args) {
   var appContext = useRequiredContext(AppContext);
   var uniqueId = useUniqueId('droppable');
   var registry = appContext.registry,
-      marshal = appContext.marshal;
+      marshal = appContext.marshal,
+      autoScroll = appContext.autoScroll;
   var previousRef = usePrevious(args);
   var descriptor = useMemo(function () {
     return {
@@ -7331,7 +7333,7 @@ function useDroppablePublisher(args) {
     });
     var scrollable = env.closestScrollable;
 
-    if (scrollable) {
+    if (scrollable && autoScroll) {
       scrollable.setAttribute(scrollContainer.contextId, appContext.contextId);
       scrollable.addEventListener('scroll', onClosestScroll, getListenerOptions(dragging.scrollOptions));
 
@@ -7367,8 +7369,11 @@ function useDroppablePublisher(args) {
     !dragging ? process.env.NODE_ENV !== "production" ? invariant(false, 'Cannot scroll when there is no drag') : invariant(false) : void 0;
     var closest = getClosestScrollableFromDrag(dragging);
     !closest ? process.env.NODE_ENV !== "production" ? invariant(false, 'Cannot scroll a droppable with no closest scrollable') : invariant(false) : void 0;
-    closest.scrollTop += change.y;
-    closest.scrollLeft += change.x;
+
+    if (autoScroll) {
+      closest.scrollTop += change.y;
+      closest.scrollLeft += change.x;
+    }
   }, []);
   var callbacks = useMemo(function () {
     return {

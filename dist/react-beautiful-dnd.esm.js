@@ -44,7 +44,7 @@ var error = log.bind(null, 'error');
 function noop() {}
 
 function getOptions(shared, fromBinding) {
-  return _extends({}, shared, fromBinding);
+  return _extends({}, shared, {}, fromBinding);
 }
 
 function bindEvents(el, bindings, sharedOptions) {
@@ -2435,7 +2435,7 @@ var publishWhileDraggingInVirtual = (function (_ref) {
     return scrolled;
   });
 
-  var droppables = _extends({}, state.dimensions.droppables, toDroppableMap(withScrollChange));
+  var droppables = _extends({}, state.dimensions.droppables, {}, toDroppableMap(withScrollChange));
 
   var updatedAdditions = toDraggableMap(adjustAdditionsForScrollChanges({
     additions: published.additions,
@@ -2443,7 +2443,7 @@ var publishWhileDraggingInVirtual = (function (_ref) {
     viewport: state.viewport
   }));
 
-  var draggables = _extends({}, state.dimensions.draggables, updatedAdditions);
+  var draggables = _extends({}, state.dimensions.draggables, {}, updatedAdditions);
 
   published.removals.forEach(function (id) {
     delete draggables[id];
@@ -5444,8 +5444,8 @@ function useHiddenTextElement(_ref2) {
 var AppContext = React.createContext(null);
 
 var peerDependencies = {
-	react: "^16.8.5",
-	"react-dom": "^16.8.5"
+	react: "^16.8.5 || ^17.0.0",
+	"react-dom": "^16.8.5 || ^17.0.0"
 };
 
 var semver = /(\d+)\.(\d+)\.(\d+)/;
@@ -6184,7 +6184,7 @@ function getHandleBindings(_ref2) {
   }];
 }
 
-function useMouseSensor$1(api) {
+function useTouchSensor(api) {
   var phaseRef = useRef(idle$2);
   var unbindEventsRef = useRef(noop);
   var getPhase = useCallback(function getPhase() {
@@ -6734,7 +6734,7 @@ function tryStart(_ref3) {
   return preDrag;
 }
 
-var defaultSensors = [useMouseSensor, useKeyboardSensor, useMouseSensor$1];
+var defaultSensors = [useMouseSensor, useKeyboardSensor, useTouchSensor];
 function useSensorMarshal(_ref4) {
   var contextId = _ref4.contextId,
       store = _ref4.store,
@@ -8514,4 +8514,4 @@ var ConnectedDroppable = connect(makeMapStateToProps$1, mapDispatchToProps$1, nu
 })(Droppable);
 ConnectedDroppable.defaultProps = defaultProps;
 
-export { DragDropContext, PublicDraggable as Draggable, ConnectedDroppable as Droppable, resetServerContext };
+export { DragDropContext, PublicDraggable as Draggable, ConnectedDroppable as Droppable, resetServerContext, useKeyboardSensor, useMouseSensor, useTouchSensor };
